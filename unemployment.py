@@ -4,6 +4,16 @@ import sys
 import json
 import time
 from selenium import webdriver
+import argparse
+
+print("Specify --dry for a dry run - won't submit")
+print("Specify --headless to run headless")
+parser = argparse.ArgumentParser()
+parser.add_argument("--dry", default=False, action="store_true")
+parser.add_argument("--headless", default=False, action="store_true")
+args = parser.parse_args()
+print(f"Dry run: {args.dry}")
+print(f"Headless: {args.headless}")
 
 # load config for credentials
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -25,7 +35,14 @@ if None in [username, password]:
         f"{config_path} file exists but unable to parse username and/or password fields"
     )
 
-driver = webdriver.Chrome()
+chrome_options = None
+if args.headless:
+    from selenium.webdriver.chrome.options import Options
+
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+
+driver = webdriver.Chrome(options=chrome_options)
 driver.maximize_window()
 
 # sign in
@@ -120,11 +137,11 @@ for button in buttons:
         button.click()
         break
 
-
-buttons = driver.find_elements_by_tag_name("button")
-for button in buttons:
-    if "Certify Claim" in button.get_attribute("value"):
-        button.click()
-        break
+if not args.dry:
+    buttons = driver.find_elements_by_tag_name("button")
+    for button in buttons:
+        if "Certify Claim" in button.get_attribute("value"):
+            button.click()
+            break
 time.sleep(10)
 driver.close()
